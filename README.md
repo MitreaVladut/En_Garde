@@ -25,3 +25,21 @@ Specialized online store for fencing equipment (foil, épée, sabre gear, protec
 - **Database**: PostgreSQL 16 (fallback: SQLite3 for quick local development)
 - **Payments**: Stripe Checkout (test mode) + Webhooks
 - **DevOps**: Docker Compose, pytest
+
+---
+
+## 3. Getting Started
+
+### Local Setup
+```bash
+uv venv --python 3.12 .venv
+.venv\Scripts\activate
+uv pip install -r requirements.txt
+python manage.py migrate
+python manage.py runserver
+```
+
+### Docker Compose
+```bash
+docker compose up --build
+```
