@@ -1,0 +1,220 @@
+{% load static %}
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>{% block title %}En Garde Gear — Premium Fencing Equipment{% endblock %}</title>
+  
+  <!-- Bootstrap 5.3 CSS -->
+  <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.3/dist/css/bootstrap.min.css" rel="stylesheet" integrity="sha384-QWTKZyjpPEjISv5WaRU9OFeRpok6YctnYmDr5pNlyT2bRjXh0JMhjY6hW+ALEwIH" crossorigin="anonymous">
+  <!-- Bootstrap Icons -->
+  <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/bootstrap-icons@1.11.3/font/bootstrap-icons.min.css">
+  <!-- Custom CSS -->
+  <link rel="stylesheet" href="{% static 'css/style.css' %}">
+  {% block extra_head %}{% endblock %}
+</head>
+<body>
+
+  <!-- Top Main Navbar -->
+  <nav class="navbar navbar-expand-lg navbar-dark bg-fencing-navy sticky-top py-2">
+    <div class="container">
+      <a class="navbar-brand navbar-brand-fencing" href="{% url 'catalog:product_list' %}">
+        <i class="bi bi-shield-shaded text-info fs-4"></i>
+        <span>EN GARDE GEAR</span>
+      </a>
+
+      <!-- Search Bar (A2 Case-insensitive search) -->
+      <form class="d-flex mx-lg-4 my-2 my-lg-0 flex-grow-1" role="search" action="{% url 'catalog:search' %}" method="get" style="max-width: 480px;">
+        <div class="input-group">
+          <input class="form-control bg-light border-0" type="search" name="q" placeholder="Search products..." value="{{ search_query|default:'' }}" aria-label="Search">
+          <button class="btn btn-primary px-3" type="submit">
+            <i class="bi bi-search"></i>
+          </button>
+        </div>
+      </form>
+
+      <!-- Mobile Toggle -->
+      <button class="navbar-toggler border-0" type="button" data-bs-toggle="collapse" data-bs-target="#navMainCollapse" aria-controls="navMainCollapse" aria-expanded="false" aria-label="Toggle navigation">
+        <span class="navbar-toggler-icon"></span>
+      </button>
+
+      <!-- Right Nav Actions -->
+      <div class="collapse navbar-collapse justify-content-end" id="navMainCollapse">
+        <ul class="navbar-nav align-items-lg-center gap-2 mt-2 mt-lg-0">
+          <li class="nav-item">
+            <a class="nav-link text-light d-flex align-items-center gap-1" href="{% url 'catalog:starter_kit_guide' %}">
+              <i class="bi bi-compass text-warning"></i>
+              <span>Starter Kit</span>
+            </a>
+          </li>
+
+          {% if user.is_authenticated %}
+            <li class="nav-item">
+              <a class="nav-link text-light position-relative d-flex align-items-center gap-1" href="{% url 'catalog:wishlist' %}" title="Wishlist">
+                <i class="bi bi-heart text-danger"></i>
+                <span class="d-lg-none">Wishlist</span>
+                {% if wishlist_count > 0 %}
+                  <span class="badge rounded-pill bg-danger ms-1">{{ wishlist_count }}</span>
+                {% endif %}
+              </a>
+            </li>
+          {% endif %}
+
+          <li class="nav-item">
+            <a class="btn btn-outline-info text-white d-flex align-items-center gap-2" href="{% url 'cart:cart_detail' %}">
+              <i class="bi bi-cart3"></i>
+              <span>Cart ({{ cart_count|default:0 }})</span>
+            </a>
+          </li>
+
+          <!-- Auth Menu -->
+          {% if user.is_authenticated %}
+            <li class="nav-item dropdown">
+              <a class="nav-link dropdown-toggle text-light d-flex align-items-center gap-2" href="#" role="button" data-bs-toggle="dropdown" aria-expanded="false">
+                <i class="bi bi-person-circle fs-5 text-info"></i>
+                <span>{{ user.name|default:user.email|truncatechars:18 }}</span>
+              </a>
+              <ul class="dropdown-menu dropdown-menu-end shadow">
+                {% if user.is_staff %}
+                  <li>
+                    <a class="dropdown-item fw-bold text-primary" href="{% url 'manage:dashboard' %}">
+                      <i class="bi bi-speedometer2 me-2"></i>Administration Panel
+                    </a>
+                  </li>
+                  <li><hr class="dropdown-divider"></li>
+                {% endif %}
+                <li>
+                  <a class="dropdown-item" href="{% url 'orders:order_list' %}">
+                    <i class="bi bi-box-seam me-2"></i>My Orders
+                  </a>
+                </li>
+                <li>
+                  <a class="dropdown-item" href="{% url 'accounts:address_list' %}">
+                    <i class="bi bi-geo-alt me-2"></i>Saved Addresses
+                  </a>
+                </li>
+                <li>
+                  <a class="dropdown-item" href="{% url 'catalog:wishlist' %}">
+                    <i class="bi bi-heart me-2"></i>My Wishlist
+                  </a>
+                </li>
+                <li><hr class="dropdown-divider"></li>
+                <li>
+                  <form method="post" action="{% url 'accounts:logout' %}">
+                    {% csrf_token %}
+                    <button type="submit" class="dropdown-item text-danger">
+                      <i class="bi bi-box-arrow-right me-2"></i>Log out
+                    </button>
+                  </form>
+                </li>
+              </ul>
+            </li>
+          {% else %}
+            <li class="nav-item d-flex gap-2">
+              <a class="nav-link text-light" href="{% url 'accounts:login' %}">Log in</a>
+              <a class="btn btn-sm btn-primary align-self-center px-3" href="{% url 'accounts:register' %}">Register</a>
+            </li>
+          {% endif %}
+        </ul>
+      </div>
+    </div>
+  </nav>
+
+  <!-- Secondary Category Navigation Bar -->
+  <div class="category-subnav d-none d-md-block">
+    <div class="container">
+      <ul class="nav">
+        <li class="nav-item">
+          <a class="nav-link {% if not current_category %}active{% endif %}" href="{% url 'catalog:product_list' %}">
+            All Products
+          </a>
+        </li>
+        {% for cat in nav_categories %}
+          <li class="nav-item">
+            <a class="nav-link {% if current_category.slug == cat.slug %}active{% endif %}" href="{% url 'catalog:category_detail' slug=cat.slug %}">
+              {{ cat.name }}
+            </a>
+          </li>
+        {% endfor %}
+      </ul>
+    </div>
+  </div>
+
+  <!-- Messages Alert Framework -->
+  <div class="container mt-3">
+    {% if messages %}
+      {% for message in messages %}
+        <div class="alert alert-{{ message.tags }} alert-dismissible fade show shadow-sm" role="alert">
+          {{ message }}
+          <button type="button" class="btn-close" data-bs-dismiss="alert" aria-label="Close"></button>
+        </div>
+      {% endfor %}
+    {% endif %}
+  </div>
+
+  <!-- Main Content -->
+  <main class="py-4">
+    {% block content %}{% endblock %}
+  </main>
+
+  <!-- Footer -->
+  <footer class="bg-dark text-light pt-5 pb-4 mt-auto border-top border-secondary">
+    <div class="container">
+      <div class="row g-4">
+        <div class="col-12 col-md-4">
+          <h5 class="fw-bold text-info mb-3">
+            <i class="bi bi-shield-shaded me-1"></i> EN GARDE GEAR
+          </h5>
+          <p class="small text-secondary mb-3">
+            High-performance fencing equipment, weapons, certified protective garments, and spare parts engineered for athletes of all levels.
+          </p>
+          <div class="small text-secondary">
+            <strong>Team:</strong> Stan Oana Adriana (Catalog & UI lead) & Mitrea Vladut-Cristian (Backend lead)<br>
+            Semester Project 2026–2027
+          </div>
+        </div>
+
+        <div class="col-6 col-md-2">
+          <h6 class="text-uppercase fw-bold text-white small mb-3">Categories</h6>
+          <ul class="list-unstyled small">
+            {% for cat in nav_categories %}
+              <li class="mb-2">
+                <a href="{% url 'catalog:category_detail' slug=cat.slug %}" class="text-secondary text-decoration-none hover-white">{{ cat.name }}</a>
+              </li>
+            {% endfor %}
+          </ul>
+        </div>
+
+        <div class="col-6 col-md-3">
+          <h6 class="text-uppercase fw-bold text-white small mb-3">Safety & Standards</h6>
+          <div class="small text-secondary">
+            <p class="mb-1"><strong class="text-light">CE Level 1 (350N):</strong> Approved for national club practice and youth tournaments.</p>
+            <p class="mb-0"><strong class="text-light">FIE Level 2 (800N/1600N):</strong> High-tensile ballistic gear homologated for official international competition.</p>
+          </div>
+        </div>
+
+        <div class="col-12 col-md-3">
+          <h6 class="text-uppercase fw-bold text-white small mb-3">Customer Support</h6>
+          <ul class="list-unstyled small text-secondary">
+            <li class="mb-2"><a href="{% url 'catalog:starter_kit_guide' %}" class="text-secondary text-decoration-none">Beginner & Parent Starter Guide</a></li>
+            <li class="mb-2">Standard Delivery (3-5 days: €5.00)</li>
+            <li class="mb-2">Express Delivery (1-2 days: €12.00)</li>
+            <li class="mb-2">Secure payments via Stripe Checkout</li>
+          </ul>
+        </div>
+      </div>
+
+      <hr class="border-secondary my-4">
+      <div class="d-flex flex-wrap justify-content-between align-items-center small text-secondary">
+        <div>&copy; 2026-2027 En Garde Gear. All rights reserved.</div>
+        <div>Responsive design tested at 360px viewport. Built with Django 5 & Bootstrap 5.</div>
+      </div>
+    </div>
+  </footer>
+
+  <!-- Bootstrap 5.3 JS Bundle -->
+  <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.3/dist/js/bootstrap.bundle.min.js" integrity="sha384-YvpcrYf0tY3lHB60NNkmXc5s9fDVZLESaAA55NDzOxhy9GkcIdslK1eN7N6jIeHz" crossorigin="anonymous"></script>
+  {% block extra_js %}{% endblock %}
+</body>
+</html>

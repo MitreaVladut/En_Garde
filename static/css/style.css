@@ -1,0 +1,208 @@
+/* En Garde Gear - Custom Stylesheet */
+:root {
+  --egg-navy: #0f172a;
+  --egg-navy-light: #1e293b;
+  --egg-blue: #1d4ed8;
+  --egg-blue-light: #38bdf8;
+  --egg-accent: #0284c7;
+  --egg-gold: #f59e0b;
+  --egg-silver: #e2e8f0;
+  --egg-bg: #f8fafc;
+}
+
+body {
+  font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, "Helvetica Neue", Arial, sans-serif;
+  background-color: var(--egg-bg);
+  color: #1e293b;
+  min-height: 100vh;
+  display: flex;
+  flex-direction: column;
+}
+
+main {
+  flex: 1 0 auto;
+}
+
+/* Navbar */
+.navbar-brand-fencing {
+  font-weight: 800;
+  letter-spacing: 1px;
+  color: #ffffff !important;
+  display: flex;
+  align-items: center;
+  gap: 0.5rem;
+}
+
+.brand-foil-icon {
+  width: 24px;
+  height: 24px;
+  fill: #38bdf8;
+}
+
+.bg-fencing-navy {
+  background-color: #091224 !important;
+  border-bottom: 2px solid #1e293b;
+}
+
+.category-subnav {
+  background-color: #0f172a;
+  border-bottom: 1px solid #334155;
+}
+
+.category-subnav .nav-link {
+  color: #cbd5e1;
+  font-size: 0.9rem;
+  font-weight: 500;
+  padding: 0.6rem 1rem;
+  transition: all 0.2s ease;
+}
+
+.category-subnav .nav-link:hover,
+.category-subnav .nav-link.active {
+  color: #38bdf8;
+  background-color: rgba(56, 189, 248, 0.1);
+  border-radius: 4px;
+}
+
+/* Product Cards */
+.product-card {
+  transition: transform 0.2s ease, box-shadow 0.2s ease;
+  border: 1px solid #e2e8f0;
+  background-color: #ffffff;
+  height: 100%;
+}
+
+.product-card:hover {
+  transform: translateY(-3px);
+  box-shadow: 0 10px 25px -5px rgba(0, 0, 0, 0.08), 0 8px 10px -6px rgba(0, 0, 0, 0.04);
+}
+
+.product-img-wrapper {
+  position: relative;
+  background-color: #f1f5f9;
+  height: 220px;
+  overflow: hidden;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+
+.product-img-wrapper img {
+  width: 100%;
+  height: 100%;
+  object-fit: cover;
+  transition: transform 0.3s ease;
+}
+
+.product-card:hover .product-img-wrapper img {
+  transform: scale(1.03);
+}
+
+.badge-stock-in {
+  background-color: #dcfce7;
+  color: #15803d;
+  font-weight: 600;
+}
+
+.badge-stock-low {
+  background-color: #fef3c7;
+  color: #b45309;
+  font-weight: 600;
+}
+
+.badge-stock-out {
+  background-color: #fee2e2;
+  color: #b91c1c;
+  font-weight: 600;
+}
+
+/* Filter Sidebar */
+.filter-card {
+  background: #ffffff;
+  border: 1px solid #e2e8f0;
+  border-radius: 0.5rem;
+}
+
+.filter-header {
+  font-weight: 700;
+  font-size: 0.85rem;
+  text-transform: uppercase;
+  letter-spacing: 0.5px;
+  color: #475569;
+  margin-bottom: 0.75rem;
+}
+
+/* Stepper / Breadcrumbs for Checkout */
+.checkout-stepper {
+  display: flex;
+  justify-content: space-between;
+  margin-bottom: 2rem;
+  position: relative;
+}
+
+.checkout-step {
+  text-align: center;
+  flex: 1;
+  position: relative;
+  font-size: 0.85rem;
+  font-weight: 600;
+  color: #94a3b8;
+}
+
+.checkout-step.active {
+  color: var(--egg-blue);
+}
+
+.checkout-step.completed {
+  color: #10b981;
+}
+
+.checkout-step-number {
+  width: 32px;
+  height: 32px;
+  border-radius: 50%;
+  background: #e2e8f0;
+  color: #64748b;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  margin-bottom: 0.5rem;
+  font-weight: 700;
+}
+
+.checkout-step.active .checkout-step-number {
+  background: var(--egg-blue);
+  color: #ffffff;
+}
+
+.checkout-step.completed .checkout-step-number {
+  background: #10b981;
+  color: #ffffff;
+}
+
+/* Certification Info Box */
+.cert-info-box {
+  background: #eff6ff;
+  border-left: 4px solid var(--egg-blue);
+  border-radius: 4px;
+  padding: 1rem;
+}
+
+/* Responsive Table & 360px viewport safeguards (Requirement A11) */
+@media (max-width: 576px) {
+  .product-img-wrapper {
+    height: 180px;
+  }
+  
+  .navbar-brand-fencing span {
+    font-size: 1.1rem;
+  }
+  
+  .checkout-step-text {
+    display: none;
+  }
+  
+  .table-responsive {
+    font-size: 0.85rem;
+  }
+}
