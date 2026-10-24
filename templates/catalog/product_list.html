@@ -1,0 +1,246 @@
+{% extends 'base.html' %}
+{% load catalog_tags %}
+
+{% block title %}
+  {% if current_category %}{{ current_category.name }} — En Garde Gear{% else %}All Fencing Equipment — En Garde Gear{% endif %}
+{% endblock %}
+
+{% block content %}
+<div class="container">
+
+  <!-- Breadcrumb & Header -->
+  <nav aria-label="breadcrumb" class="mb-3">
+    <ol class="breadcrumb small">
+      <li class="breadcrumb-item"><a href="{% url 'catalog:product_list' %}" class="text-decoration-none">Home</a></li>
+      {% if current_category %}
+        <li class="breadcrumb-item active" aria-current="page">{{ current_category.name }}</li>
+      {% else %}
+        <li class="breadcrumb-item active" aria-current="page">All Products</li>
+      {% endif %}
+    </ol>
+  </nav>
+
+  <div class="d-flex flex-wrap justify-content-between align-items-center mb-4 gap-2">
+    <div>
+      <h1 class="h3 fw-bold mb-1">
+        {% if current_category %}{{ current_category.name }}{% else %}Fencing Catalogue{% endif %}
+      </h1>
+      <p class="text-muted small mb-0">
+        {% if current_category %}{{ current_category.description }}{% else %}Equip yourself with FIE certified weapons, jackets, masks, cords, and spare parts.{% endif %}
+      </p>
+    </div>
+
+    <!-- Mobile filter toggle button (Requirement A11 360px) -->
+    <div class="d-md-none w-100 mt-2">
+      <button class="btn btn-outline-primary w-100 d-flex justify-content-between align-items-center" type="button" data-bs-toggle="collapse" data-bs-target="#filterSidebar" aria-expanded="false">
+        <span><i class="bi bi-funnel me-2"></i>Filters & Sorting</span>
+        <i class="bi bi-chevron-down"></i>
+      </button>
+    </div>
+  </div>
+
+  <div class="row g-4">
+    <!-- Filter Sidebar (Requirement B1) -->
+    <div class="col-12 col-md-3">
+      <div class="collapse d-md-block" id="filterSidebar">
+        <form method="get" action="" class="filter-card p-3 shadow-sm mb-4">
+          {% if current_category %}
+            <input type="hidden" name="category" value="{{ current_category.slug }}">
+          {% endif %}
+
+          <div class="d-flex justify-content-between align-items-center pb-2 mb-3 border-bottom">
+            <h5 class="h6 fw-bold mb-0 text-dark"><i class="bi bi-funnel-fill text-primary me-2"></i>Filters</h5>
+            <a href="{% if current_category %}{% url 'catalog:category_detail' slug=current_category.slug %}{% else %}{% url 'catalog:product_list' %}{% endif %}" class="text-danger small text-decoration-none">Reset</a>
+          </div>
+
+          <!-- Sort -->
+          <div class="mb-3">
+            <label class="filter-header d-block">Sort by</label>
+            <select name="sort" class="form-select form-select-sm" onchange="this.form.submit()">
+              <option value="newest" {% if selected_sort == 'newest' %}selected{% endif %}>Newest arrivals</option>
+              <option value="price_asc" {% if selected_sort == 'price_asc' %}selected{% endif %}>Price: Low to High</option>
+              <option value="price_desc" {% if selected_sort == 'price_desc' %}selected{% endif %}>Price: High to Low</option>
+              <option value="name" {% if selected_sort == 'name' %}selected{% endif %}>Product name (A-Z)</option>
+            </select>
+          </div>
+
+          <!-- Weapon Filter -->
+          <div class="mb-3">
+            <label class="filter-header d-block">Weapon</label>
+            <div class="d-flex flex-column gap-1 small">
+              <div class="form-check">
+                <input class="form-check-input" type="radio" name="weapon" id="weapon_all" value="" {% if not selected_weapon %}checked{% endif %} onchange="this.form.submit()">
+                <label class="form-check-label" for="weapon_all">All Weapons</label>
+              </div>
+              <div class="form-check">
+                <input class="form-check-input" type="radio" name="weapon" id="weapon_foil" value="foil" {% if selected_weapon == 'foil' %}checked{% endif %} onchange="this.form.submit()">
+                <label class="form-check-label" for="weapon_foil">Foil</label>
+              </div>
+              <div class="form-check">
+                <input class="form-check-input" type="radio" name="weapon" id="weapon_epee" value="epee" {% if selected_weapon == 'epee' %}checked{% endif %} onchange="this.form.submit()">
+                <label class="form-check-label" for="weapon_epee">Epee</label>
+              </div>
+              <div class="form-check">
+                <input class="form-check-input" type="radio" name="weapon" id="weapon_sabre" value="sabre" {% if selected_weapon == 'sabre' %}checked{% endif %} onchange="this.form.submit()">
+                <label class="form-check-label" for="weapon_sabre">Sabre</label>
+              </div>
+            </div>
+          </div>
+
+          <!-- Certification Filter -->
+          <div class="mb-3">
+            <label class="filter-header d-block">Certification</label>
+            <select name="cert" class="form-select form-select-sm" onchange="this.form.submit()">
+              <option value="">All Certifications</option>
+              <option value="350N" {% if selected_cert == '350N' %}selected{% endif %}>350N CE Level 1</option>
+              <option value="800N" {% if selected_cert == '800N' %}selected{% endif %}>800N FIE Level 2</option>
+              <option value="FIE" {% if selected_cert == 'FIE' %}selected{% endif %}>FIE Homologated</option>
+            </select>
+          </div>
+
+          <!-- In Stock Checkbox -->
+          <div class="mb-3">
+            <label class="filter-header d-block">Availability</label>
+            <div class="form-check small">
+              <input class="form-check-input" type="checkbox" name="in_stock" value="1" id="inStockCheck" {% if selected_in_stock == '1' %}checked{% endif %} onchange="this.form.submit()">
+              <label class="form-check-label" for="inStockCheck">In stock only</label>
+            </div>
+          </div>
+
+          <!-- Price Range -->
+          <div class="mb-3">
+            <label class="filter-header d-block">Price range (€)</label>
+            <div class="row g-2">
+              <div class="col-6">
+                <input type="number" name="min_price" class="form-control form-control-sm" placeholder="Min €" value="{{ selected_min_price }}" min="0">
+              </div>
+              <div class="col-6">
+                <input type="number" name="max_price" class="form-control form-control-sm" placeholder="Max €" value="{{ selected_max_price }}" min="0">
+              </div>
+            </div>
+          </div>
+
+          <button type="submit" class="btn btn-sm btn-primary w-100">Apply Filters</button>
+        </form>
+      </div>
+    </div>
+
+    <!-- Product Grid (24 items per page - Requirement A1) -->
+    <div class="col-12 col-md-9">
+      <div class="d-flex justify-content-between align-items-center mb-3">
+        <span class="text-muted small">Showing {{ page_obj.start_index }}-{{ page_obj.end_index }} of {{ paginator.count }} products</span>
+      </div>
+
+      {% if products %}
+        <div class="row row-cols-1 row-cols-sm-2 row-cols-lg-3 g-4">
+          {% for product in products %}
+            <div class="col">
+              <div class="card product-card rounded-3 overflow-hidden">
+                <div class="product-img-wrapper">
+                  <a href="{{ product.get_absolute_url }}">
+                    {% if product.get_primary_image %}
+                      <img src="{{ product.get_primary_image }}" alt="{{ product.name }}" loading="lazy">
+                    {% else %}
+                      <div class="text-secondary small d-flex flex-column align-items-center justify-content-center h-100">
+                        <i class="bi bi-shield text-info fs-1"></i>
+                        <span>En Garde Gear</span>
+                      </div>
+                    {% endif %}
+                  </a>
+                  <span class="position-absolute top-0 start-0 m-2 badge bg-dark bg-opacity-75">
+                    {{ product.category.name }}
+                  </span>
+                </div>
+
+                <div class="card-body p-3 d-flex flex-column">
+                  <h6 class="card-title fw-bold mb-1">
+                    <a href="{{ product.get_absolute_url }}" class="text-dark text-decoration-none hover-primary">
+                      {{ product.name }}
+                    </a>
+                  </h6>
+
+                  <p class="card-text text-muted small flex-grow-1 line-clamp-2 mb-2" style="font-size: 0.82rem; min-height: 2.4rem;">
+                    {{ product.description|truncatewords:14 }}
+                  </p>
+
+                  <div class="d-flex justify-content-between align-items-center pt-2 border-top mt-auto">
+                    <div>
+                      <span class="text-muted small d-block" style="font-size: 0.75rem;">from</span>
+                      <span class="fw-bold fs-6 text-primary">€{{ product.min_price }}</span>
+                    </div>
+
+                    <div>
+                      {% if product.total_available_stock > 3 %}
+                        <span class="badge badge-stock-in px-2 py-1 small">In stock</span>
+                      {% elif product.total_available_stock > 0 %}
+                        <span class="badge badge-stock-low px-2 py-1 small">Only {{ product.total_available_stock }} left</span>
+                      {% else %}
+                        <span class="badge badge-stock-out px-2 py-1 small">Out of stock</span>
+                      {% endif %}
+                    </div>
+                  </div>
+                </div>
+
+                <div class="card-footer bg-white border-0 pt-0 pb-3 px-3">
+                  <a href="{{ product.get_absolute_url }}" class="btn btn-sm btn-outline-primary w-100">
+                    View Details
+                  </a>
+                </div>
+              </div>
+            </div>
+          {% endfor %}
+        </div>
+
+        <!-- Pagination (Requirement A1 & B1 preservation) -->
+        {% if is_paginated %}
+          <nav aria-label="Page navigation" class="mt-5">
+            <ul class="pagination justify-content-center">
+              {% if page_obj.has_previous %}
+                <li class="page-item">
+                  <a class="page-link" href="?{% query_transform page=page_obj.previous_page_number %}" aria-label="Previous">
+                    &laquo; Previous
+                  </a>
+                </li>
+              {% else %}
+                <li class="page-item disabled"><span class="page-link">&laquo; Previous</span></li>
+              {% endif %}
+
+              {% for num in paginator.page_range %}
+                {% if page_obj.number == num %}
+                  <li class="page-item active"><span class="page-link">{{ num }}</span></li>
+                {% elif num > page_obj.number|add:'-3' and num < page_obj.number|add:'3' %}
+                  <li class="page-item">
+                    <a class="page-link" href="?{% query_transform page=num %}">{{ num }}</a>
+                  </li>
+                {% endif %}
+              {% endfor %}
+
+              {% if page_obj.has_next %}
+                <li class="page-item">
+                  <a class="page-link" href="?{% query_transform page=page_obj.next_page_number %}" aria-label="Next">
+                    Next &raquo;
+                  </a>
+                </li>
+              {% else %}
+                <li class="page-item disabled"><span class="page-link">Next &raquo;</span></li>
+              {% endif %}
+            </ul>
+          </nav>
+        {% endif %}
+
+      {% else %}
+        <div class="card text-center p-5 border-0 bg-white shadow-sm">
+          <div class="mb-3">
+            <i class="bi bi-funnel text-secondary fs-1"></i>
+          </div>
+          <h4 class="fw-bold">No products match your filters</h4>
+          <p class="text-muted">Try adjusting or clearing your price or weapon filters to see more results.</p>
+          <div>
+            <a href="{% url 'catalog:product_list' %}" class="btn btn-primary px-4">Clear All Filters</a>
+          </div>
+        </div>
+      {% endif %}
+    </div>
+  </div>
+</div>
+{% endblock %}

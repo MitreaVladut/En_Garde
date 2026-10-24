@@ -1,0 +1,388 @@
+{% extends 'base.html' %}
+
+{% block title %}{{ product.name }} — En Garde Gear{% endblock %}
+
+{% block content %}
+<div class="container">
+
+  <!-- Breadcrumb -->
+  <nav aria-label="breadcrumb" class="mb-4">
+    <ol class="breadcrumb small">
+      <li class="breadcrumb-item"><a href="{% url 'catalog:product_list' %}" class="text-decoration-none">Home</a></li>
+      <li class="breadcrumb-item"><a href="{% url 'catalog:category_detail' slug=product.category.slug %}" class="text-decoration-none">{{ product.category.name }}</a></li>
+      <li class="breadcrumb-item active" aria-current="page">{{ product.name }}</li>
+    </ol>
+  </nav>
+
+  <div class="row g-4 mb-5">
+    <!-- Left Column: Image Gallery -->
+    <div class="col-12 col-md-6">
+      <div class="card border-0 shadow-sm p-3 bg-white rounded-3">
+        <div class="product-img-wrapper rounded-3 mb-3" style="height: 380px;">
+          {% if product.get_primary_image %}
+            <img id="mainProductImage" src="{{ product.get_primary_image }}" alt="{{ product.name }}" class="img-fluid rounded-2">
+          {% else %}
+            <div class="text-secondary d-flex flex-column align-items-center justify-content-center h-100">
+              <i class="bi bi-shield text-info" style="font-size: 4rem;"></i>
+              <span class="mt-2 fw-semibold">En Garde Gear</span>
+            </div>
+          {% endif %}
+        </div>
+
+        {% if images.count > 1 %}
+          <div class="d-flex gap-2 overflow-auto py-2">
+            {% for img in images %}
+              <button type="button" class="btn p-0 border rounded overflow-hidden" style="width: 70px; height: 70px;" onclick="document.getElementById('mainProductImage').src='{{ img.file.url }}'">
+                <img src="{{ img.file.url }}" alt="{{ product.name }}" style="width: 100%; height: 100%; object-fit: cover;">
+              </button>
+            {% endfor %}
+          </div>
+        {% endif %}
+      </div>
+    </div>
+
+    <!-- Right Column: Product Info & Variant Selection -->
+    <div class="col-12 col-md-6">
+      <div class="ps-lg-3">
+        <div class="d-flex align-items-center gap-2 mb-2">
+          <span class="badge bg-secondary">{{ product.category.name }}</span>
+          {% if product_attrs.weapon_type %}
+            <span class="badge bg-info text-dark text-capitalize">{{ product_attrs.weapon_type }}</span>
+          {% endif %}
+          {% if product_attrs.certification %}
+            <span class="badge bg-dark">{{ product_attrs.certification }}</span>
+          {% endif %}
+        </div>
+
+        <h1 class="h2 fw-bold mb-2">{{ product.name }}</h1>
+
+        <!-- Live Price Display -->
+        <div class="d-flex align-items-baseline gap-2 mb-3">
+          <span class="h3 fw-bold text-primary mb-0" id="displayPrice">
+            €{{ default_variant.price|default:product.min_price }}
+          </span>
+          <span class="text-muted small">VAT included</span>
+        </div>
+
+        <!-- Live Stock Availability Status (Variant stock minus active reservations) -->
+        <div class="mb-4" id="stockStatusWrapper">
+          {% if default_variant %}
+            {% if default_variant.get_available_stock > 3 %}
+              <span class="badge badge-stock-in px-3 py-2 fs-6">
+                <i class="bi bi-check-circle-fill me-1"></i> In stock ({{ default_variant.get_available_stock }} available)
+              </span>
+            {% elif default_variant.get_available_stock > 0 %}
+              <span class="badge badge-stock-low px-3 py-2 fs-6">
+                <i class="bi bi-exclamation-triangle-fill me-1"></i> Low stock: only {{ default_variant.get_available_stock }} left!
+              </span>
+            {% else %}
+              <span class="badge badge-stock-out px-3 py-2 fs-6">
+                <i class="bi bi-x-circle-fill me-1"></i> Out of stock
+              </span>
+            {% endif %}
+          {% endif %}
+        </div>
+
+        <hr class="my-4">
+
+        <!-- Add to Cart Form -->
+        <form method="post" action="{% url 'cart:cart_add' %}" id="addToCartForm">
+          {% csrf_token %}
+          <input type="hidden" name="variant_id" id="selectedVariantId" value="{{ default_variant.id|default:'' }}">
+
+          <!-- Variant Selectors -->
+          <div class="row g-3 mb-4">
+            <!-- Variant Selector Dropdown -->
+            <div class="col-12">
+              <div class="d-flex justify-content-between align-items-center mb-1">
+                <label for="variantSelect" class="form-label fw-bold small text-uppercase mb-0">Select Option / Specification</label>
+                <button type="button" class="btn btn-link p-0 small text-decoration-none" data-bs-toggle="modal" data-bs-target="#sizeGuideModal">
+                  <i class="bi bi-rulers me-1"></i>Size Guide
+                </button>
+              </div>
+
+              <select class="form-select" id="variantSelect" onchange="updateVariantSelection(this.value)">
+                {% for v in product.variants.all %}
+                  <option value="{{ v.id }}" {% if forloop.first %}selected{% endif %}>
+                    {{ v.label }} (SKU: {{ v.sku }}) — €{{ v.price }}
+                  </option>
+                {% endfor %}
+              </select>
+            </div>
+
+            <!-- Quantity Selector -->
+            <div class="col-12 col-sm-4">
+              <label for="cartQtyInput" class="form-label fw-bold small text-uppercase">Quantity</label>
+              <div class="input-group">
+                <button class="btn btn-outline-secondary" type="button" onclick="adjustQty(-1)">-</button>
+                <input type="number" class="form-control text-center" id="cartQtyInput" name="quantity" value="1" min="1" max="{{ default_variant.get_available_stock|default:1 }}">
+                <button class="btn btn-outline-secondary" type="button" onclick="adjustQty(1)">+</button>
+              </div>
+            </div>
+          </div>
+
+          <!-- Action Buttons -->
+          <div class="d-flex gap-2">
+            <button type="submit" class="btn btn-primary btn-lg flex-grow-1 d-flex align-items-center justify-content-center gap-2" id="addToCartBtn" {% if default_variant.get_available_stock <= 0 %}disabled{% endif %}>
+              <i class="bi bi-cart-plus-fill"></i>
+              <span>Add to Cart</span>
+            </button>
+
+            {% if user.is_authenticated %}
+              <button type="submit" formaction="{% url 'catalog:wishlist_toggle' variant_id=default_variant.id %}" formmethod="post" class="btn btn-outline-danger btn-lg px-3" title="Add to Wishlist" id="wishlistBtn">
+                <i class="bi {% if is_wishlisted %}bi-heart-fill text-danger{% else %}bi-heart{% endif %}"></i>
+              </button>
+            {% else %}
+              <a href="{% url 'accounts:login' %}?next={{ request.path }}" class="btn btn-outline-secondary btn-lg px-3" title="Log in to save to wishlist">
+                <i class="bi bi-heart"></i>
+              </a>
+            {% endif %}
+          </div>
+        </form>
+
+        <!-- Plain Language Safety Explanations (Blue Gauntlet lesson) -->
+        <div class="cert-info-box mt-4">
+          <div class="d-flex align-items-start gap-2">
+            <i class="bi bi-shield-check text-primary fs-5 mt-1"></i>
+            <div class="small">
+              <div class="fw-bold text-dark mb-1">Equipment Certification & Safety Standards</div>
+              {% if '800N' in product_attrs.certification or 'FIE' in product_attrs.certification %}
+                <p class="mb-0 text-muted">
+                  <strong>FIE Level 2 (800N/1600N):</strong> Forged or tailored for high-speed fencing. Mandatory at official European & World Championships.
+                </p>
+              {% else %}
+                <p class="mb-0 text-muted">
+                  <strong>CE Level 1 (350N):</strong> Meets rigorous European safety standards. Approved for club training, domestic leagues, and youth categories.
+                </p>
+              {% endif %}
+            </div>
+          </div>
+        </div>
+
+      </div>
+    </div>
+  </div>
+
+  <!-- Product Description Tabs -->
+  <div class="card border-0 shadow-sm p-4 bg-white rounded-3 mb-5">
+    <h3 class="h5 fw-bold mb-3 border-bottom pb-2">Description & Specifications</h3>
+    <div class="text-secondary leading-relaxed mb-4">
+      {{ product.description|linebreaks }}
+    </div>
+
+    <div class="row g-3">
+      {% for attr in product.attributes.all %}
+        <div class="col-6 col-md-3">
+          <div class="p-2 border rounded bg-light">
+            <span class="d-block text-muted small text-uppercase" style="font-size: 0.72rem;">{{ attr.name|title }}</span>
+            <span class="fw-semibold text-dark small">{{ attr.value }}</span>
+          </div>
+        </div>
+      {% endfor %}
+    </div>
+  </div>
+
+  <!-- B2 Recommendations Section: "Compatible With" & "Similar Items" -->
+  {% if compatible_items or similar_items %}
+    <div class="mb-5">
+      <h3 class="h5 fw-bold mb-4">Recommended for You</h3>
+
+      {% if compatible_items %}
+        <div class="mb-4">
+          <h4 class="h6 fw-bold text-uppercase text-muted mb-3"><i class="bi bi-puzzle me-1"></i>Compatible With This Gear</h4>
+          <div class="row row-cols-2 row-cols-md-4 g-3">
+            {% for item in compatible_items %}
+              <div class="col">
+                <div class="card product-card rounded-3 overflow-hidden h-100">
+                  <div class="product-img-wrapper" style="height: 140px;">
+                    <a href="{{ item.get_absolute_url }}">
+                      {% if item.get_primary_image %}
+                        <img src="{{ item.get_primary_image }}" alt="{{ item.name }}" loading="lazy">
+                      {% endif %}
+                    </a>
+                  </div>
+                  <div class="card-body p-2 d-flex flex-column">
+                    <span class="badge bg-light text-dark align-self-start mb-1" style="font-size: 0.7rem;">{{ item.category.name }}</span>
+                    <h6 class="card-title fw-bold small mb-1 text-truncate">
+                      <a href="{{ item.get_absolute_url }}" class="text-dark text-decoration-none">{{ item.name }}</a>
+                    </h6>
+                    <div class="text-primary fw-bold small mt-auto">from €{{ item.min_price }}</div>
+                  </div>
+                </div>
+              </div>
+            {% endfor %}
+          </div>
+        </div>
+      {% endif %}
+
+      {% if similar_items %}
+        <div>
+          <h4 class="h6 fw-bold text-uppercase text-muted mb-3"><i class="bi bi-grid me-1"></i>Similar Products</h4>
+          <div class="row row-cols-2 row-cols-md-4 g-3">
+            {% for item in similar_items %}
+              <div class="col">
+                <div class="card product-card rounded-3 overflow-hidden h-100">
+                  <div class="product-img-wrapper" style="height: 140px;">
+                    <a href="{{ item.get_absolute_url }}">
+                      {% if item.get_primary_image %}
+                        <img src="{{ item.get_primary_image }}" alt="{{ item.name }}" loading="lazy">
+                      {% endif %}
+                    </a>
+                  </div>
+                  <div class="card-body p-2 d-flex flex-column">
+                    <span class="badge bg-light text-dark align-self-start mb-1" style="font-size: 0.7rem;">{{ item.category.name }}</span>
+                    <h6 class="card-title fw-bold small mb-1 text-truncate">
+                      <a href="{{ item.get_absolute_url }}" class="text-dark text-decoration-none">{{ item.name }}</a>
+                    </h6>
+                    <div class="text-primary fw-bold small mt-auto">from €{{ item.min_price }}</div>
+                  </div>
+                </div>
+              </div>
+            {% endfor %}
+          </div>
+        </div>
+      {% endif %}
+    </div>
+  {% endif %}
+
+</div>
+
+<!-- Size Guide Modal (Leon Paul lesson: clear sizing for beginners & parents) -->
+<div class="modal fade" id="sizeGuideModal" tabindex="-1" aria-labelledby="sizeGuideModalLabel" aria-hidden="true">
+  <div class="modal-dialog modal-dialog-centered modal-lg">
+    <div class="modal-content">
+      <div class="modal-header">
+        <h5 class="modal-title fw-bold" id="sizeGuideModalLabel"><i class="bi bi-rulers me-2 text-primary"></i>Fencing Size Guide & Fitting Rules</h5>
+        <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+      </div>
+      <div class="modal-body">
+        <div class="alert alert-info small mb-3">
+          Fencing garments must overlap by at least 10 cm between jacket and breeches when lunging. When in doubt, select one size larger to accommodate an underarm plastron.
+        </div>
+
+        <h6 class="fw-bold mb-2">European Uniform Sizes (Jackets & Breeches)</h6>
+        <div class="table-responsive mb-4">
+          <table class="table table-bordered table-sm text-center small">
+            <thead class="table-light">
+              <tr>
+                <th>EU Size</th>
+                <th>Chest (cm)</th>
+                <th>Waist (cm)</th>
+                <th>Approx Height (cm)</th>
+              </tr>
+            </thead>
+            <tbody>
+              <tr><td>46</td><td>90-93</td><td>76-79</td><td>168-172</td></tr>
+              <tr><td>48</td><td>94-97</td><td>80-83</td><td>172-176</td></tr>
+              <tr><td>50</td><td>98-101</td><td>84-87</td><td>176-180</td></tr>
+              <tr><td>52</td><td>102-105</td><td>88-91</td><td>180-184</td></tr>
+              <tr><td>54</td><td>106-109</td><td>92-95</td><td>184-188</td></tr>
+            </tbody>
+          </table>
+        </div>
+
+        <h6 class="fw-bold mb-2">Glove Sizes (Circumference around palm knuckles)</h6>
+        <div class="table-responsive">
+          <table class="table table-bordered table-sm text-center small">
+            <thead class="table-light">
+              <tr>
+                <th>Glove Size</th>
+                <th>7.0</th>
+                <th>7.5</th>
+                <th>8.0</th>
+                <th>8.5</th>
+                <th>9.0</th>
+                <th>9.5</th>
+              </tr>
+            </thead>
+            <tbody>
+              <tr>
+                <td>Hand Circumference</td>
+                <td>18 cm</td>
+                <td>19 cm</td>
+                <td>20.5 cm</td>
+                <td>22 cm</td>
+                <td>23 cm</td>
+                <td>24 cm</td>
+              </tr>
+            </tbody>
+          </table>
+        </div>
+      </div>
+      <div class="modal-footer">
+        <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Close</button>
+      </div>
+    </div>
+  </div>
+</div>
+
+{% endblock %}
+
+{% block extra_js %}
+<script>
+  const variantsData = {{ variants_json|safe }};
+
+  function updateVariantSelection(variantId) {
+    const selected = variantsData.find(v => v.id == variantId);
+    if (!selected) return;
+
+    // Update hidden input
+    document.getElementById('selectedVariantId').value = selected.id;
+
+    // Update live price
+    document.getElementById('displayPrice').textContent = '€' + selected.price;
+
+    // Update live stock badge
+    const stockWrapper = document.getElementById('stockStatusWrapper');
+    const addToCartBtn = document.getElementById('addToCartBtn');
+    const qtyInput = document.getElementById('cartQtyInput');
+
+    qtyInput.max = selected.stock;
+    if (parseInt(qtyInput.value) > selected.stock) {
+      qtyInput.value = Math.max(1, selected.stock);
+    }
+
+    if (selected.stock > 3) {
+      stockWrapper.innerHTML = `
+        <span class="badge badge-stock-in px-3 py-2 fs-6">
+          <i class="bi bi-check-circle-fill me-1"></i> In stock (${selected.stock} available)
+        </span>
+      `;
+      addToCartBtn.disabled = false;
+      addToCartBtn.innerHTML = '<i class="bi bi-cart-plus-fill me-2"></i>Add to Cart';
+    } else if (selected.stock > 0) {
+      stockWrapper.innerHTML = `
+        <span class="badge badge-stock-low px-3 py-2 fs-6">
+          <i class="bi bi-exclamation-triangle-fill me-1"></i> Low stock: only ${selected.stock} left!
+        </span>
+      `;
+      addToCartBtn.disabled = false;
+      addToCartBtn.innerHTML = '<i class="bi bi-cart-plus-fill me-2"></i>Add to Cart';
+    } else {
+      stockWrapper.innerHTML = `
+        <span class="badge badge-stock-out px-3 py-2 fs-6">
+          <i class="bi bi-x-circle-fill me-1"></i> Out of stock
+        </span>
+      `;
+      addToCartBtn.disabled = true;
+      addToCartBtn.innerHTML = '<i class="bi bi-x-circle me-2"></i>Out of Stock';
+    }
+
+    // Update wishlist button target
+    const wishlistBtn = document.getElementById('wishlistBtn');
+    if (wishlistBtn) {
+      wishlistBtn.formAction = `/wishlist/toggle/${selected.id}/`;
+    }
+  }
+
+  function adjustQty(delta) {
+    const qtyInput = document.getElementById('cartQtyInput');
+    const maxVal = parseInt(qtyInput.max) || 999;
+    let current = parseInt(qtyInput.value) || 1;
+    current += delta;
+    if (current < 1) current = 1;
+    if (current > maxVal) current = maxVal;
+    qtyInput.value = current;
+  }
+</script>
+{% endblock %}
