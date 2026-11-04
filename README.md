@@ -43,3 +43,18 @@ python manage.py runserver
 ```bash
 docker compose up --build
 ```
+
+---
+
+## 4. Project Structure & Architecture
+The application is structured into six business-logic apps inside `apps/`:
+- `apps/catalog`: Categories, 33 products, variants, images, attributes, and starter-kit guide.
+- `apps/accounts`: Custom `User` model, Argon2 hashing, saved addresses (`Address` model), register/login/logout.
+- `apps/cart`: Database-backed `Cart` and `CartItem` models, guest-to-user session cart merging at login.
+- `apps/orders`: 4-step checkout wizard, `DeliveryMethod`, `Order`, `OrderItem`, and 30-minute `StockReservation`.
+- `apps/payments`: Stripe webhook listener with idempotency check (`stripe_event_id`).
+- `apps/manage`: Staff administration portal (`/manage/`) protected by `@staff_required`.
+
+## 5. Demo Accounts
+- **Customer Account**: `fencer@engarde.com` / `fencer1234`
+- **Staff Administrator Account**: `admin@engarde.com` / `admin1234`
