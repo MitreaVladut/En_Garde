@@ -1,0 +1,178 @@
+{% extends 'base.html' %}
+
+{% block title %}Your Cart — En Garde Gear{% endblock %}
+
+{% block content %}
+<div class="container">
+  <!-- Breadcrumb -->
+  <nav aria-label="breadcrumb" class="mb-3">
+    <ol class="breadcrumb small">
+      <li class="breadcrumb-item"><a href="{% url 'catalog:product_list' %}" class="text-decoration-none">Home</a></li>
+      <li class="breadcrumb-item active" aria-current="page">Shopping Cart</li>
+    </ol>
+  </nav>
+
+  <h1 class="h3 fw-bold mb-4 border-bottom pb-2">Your Cart</h1>
+
+  {% if cart_items %}
+    <div class="row g-4 mb-5">
+      <!-- Cart Items Table / Cards -->
+      <div class="col-12 col-lg-8">
+        <div class="card border-0 shadow-sm bg-white rounded-3 p-3 mb-4">
+          <div class="table-responsive">
+            <table class="table align-middle mb-0">
+              <thead class="table-light small text-uppercase">
+                <tr>
+                  <th scope="col" style="min-width: 220px;">Item</th>
+                  <th scope="col" class="text-center" style="min-width: 120px;">Quantity</th>
+                  <th scope="col" class="text-end" style="min-width: 90px;">Price</th>
+                  <th scope="col" class="text-end" style="min-width: 90px;">Total</th>
+                  <th scope="col" class="text-end"></th>
+                </tr>
+              </thead>
+              <tbody>
+                {% for item in cart_items %}
+                  {% with v=item.variant p=item.variant.product %}
+                    <tr>
+                      <td>
+                        <div class="d-flex align-items-center gap-3">
+                          <div class="rounded overflow-hidden border bg-light flex-shrink-0" style="width: 60px; height: 60px;">
+                            {% if p.get_primary_image %}
+                              <img src="{{ p.get_primary_image }}" alt="{{ p.name }}" style="width: 100%; height: 100%; object-fit: cover;">
+                            {% else %}
+                              <div class="d-flex align-items-center justify-content-center h-100 text-muted small"><i class="bi bi-shield"></i></div>
+                            {% endif %}
+                          </div>
+                          <div>
+                            <h6 class="mb-0 fw-bold small">
+                              <a href="{{ p.get_absolute_url }}" class="text-dark text-decoration-none">{{ p.name }}</a>
+                            </h6>
+                            <div class="text-muted small" style="font-size: 0.75rem;">
+                              <span class="badge bg-light text-secondary border">{{ v.label }}</span>
+                              <span class="ms-1">SKU: {{ v.sku }}</span>
+                            </div>
+                            {% if v.get_available_stock <= 3 %}
+                              <span class="text-danger small" style="font-size: 0.72rem;">Only {{ v.get_available_stock }} left in stock</span>
+                            {% endif %}
+                          </div>
+                        </div>
+                      </td>
+
+                      <!-- Quantity Controls -->
+                      <td class="text-center">
+                        <div class="d-inline-flex align-items-center border rounded">
+                          <form method="post" action="{% url 'cart:cart_update' item_id=item.id %}" class="d-inline">
+                            {% csrf_token %}
+                            <input type="hidden" name="action" value="decrease">
+                            <button type="submit" class="btn btn-sm btn-link text-dark text-decoration-none px-2 py-0">-</button>
+                          </form>
+
+                          <span class="px-2 small fw-bold">{{ item.quantity }}</span>
+
+                          <form method="post" action="{% url 'cart:cart_update' item_id=item.id %}" class="d-inline">
+                            {% csrf_token %}
+                            <input type="hidden" name="action" value="increase">
+                            <button type="submit" class="btn btn-sm btn-link text-dark text-decoration-none px-2 py-0" {% if item.quantity >= v.get_available_stock %}disabled{% endif %}>+</button>
+                          </form>
+                        </div>
+                      </td>
+
+                      <td class="text-end small">€{{ v.price }}</td>
+                      <td class="text-end fw-bold text-primary">€{{ item.line_total }}</td>
+
+                      <!-- Remove Button -->
+                      <td class="text-end">
+                        <form method="post" action="{% url 'cart:cart_remove' item_id=item.id %}">
+                          {% csrf_token %}
+                          <button type="submit" class="btn btn-sm text-danger p-0" title="Remove item">
+                            <i class="bi bi-trash"></i>
+                          </button>
+                        </form>
+                      </td>
+                    </tr>
+                  {% endwith %}
+                {% endfor %}
+              </tbody>
+            </table>
+          </div>
+        </div>
+
+        <div class="d-flex justify-content-between align-items-center">
+          <a href="{% url 'catalog:product_list' %}" class="btn btn-outline-secondary">
+            <i class="bi bi-arrow-left me-1"></i>Continue Shopping
+          </a>
+        </div>
+      </div>
+
+      <!-- Order Summary Card & Discount Form -->
+      <div class="col-12 col-lg-4">
+        <div class="card border-0 shadow-sm bg-white rounded-3 p-4 mb-4">
+          <h5 class="fw-bold mb-3 border-bottom pb-2">Order Summary</h5>
+
+          <div class="d-flex justify-content-between mb-2">
+            <span class="text-muted">Subtotal</span>
+            <span class="fw-semibold">€{{ subtotal }}</span>
+          </div>
+
+          {% if applied_discount %}
+            <div class="d-flex justify-content-between mb-2 text-success">
+              <span>Discount ({{ applied_discount.code }})</span>
+              <span>- €{{ discount_amount }}</span>
+            </div>
+          {% endif %}
+
+          <div class="d-flex justify-content-between mb-3 text-muted small">
+            <span>Estimated Delivery</span>
+            <span>Calculated at checkout</span>
+          </div>
+
+          <hr class="my-3">
+
+          <div class="d-flex justify-content-between mb-4">
+            <span class="h5 fw-bold mb-0">Total</span>
+            <span class="h4 fw-bold text-primary mb-0">€{{ total }}</span>
+          </div>
+
+          <!-- Checkout Button -->
+          <a href="{% url 'orders:checkout_address' %}" class="btn btn-primary btn-lg w-100 fw-bold py-2 shadow-sm">
+            Proceed to Checkout <i class="bi bi-arrow-right ms-1"></i>
+          </a>
+        </div>
+
+        <!-- Discount Code Form (Requirement B5) -->
+        <div class="card border-0 shadow-sm bg-white rounded-3 p-3">
+          <label class="form-label fw-bold small text-uppercase mb-2">Have a Discount Code?</label>
+          <form method="post" action="{% url 'cart:cart_discount' %}">
+            {% csrf_token %}
+            <div class="input-group">
+              <input type="text" name="code" class="form-control" placeholder="e.g. WELCOME10" value="{{ applied_discount.code|default:'' }}">
+              <button class="btn btn-outline-primary" type="submit">
+                {% if applied_discount %}Update{% else %}Apply{% endif %}
+              </button>
+            </div>
+            {% if applied_discount %}
+              <div class="small text-success mt-1">Code applied: {{ applied_discount.code }}</div>
+            {% else %}
+              <div class="form-text small">Try code <code>WELCOME10</code> (10% off) or <code>FENCER15</code> (€15 off)</div>
+            {% endif %}
+          </form>
+        </div>
+      </div>
+    </div>
+
+  {% else %}
+    <div class="card text-center p-5 border-0 bg-white shadow-sm my-4">
+      <div class="mb-3">
+        <i class="bi bi-cart-x text-muted" style="font-size: 3.5rem;"></i>
+      </div>
+      <h3 class="h4 fw-bold text-dark mb-2">Your cart is currently empty</h3>
+      <p class="text-muted mb-4">Looks like you haven't added any fencing equipment to your cart yet.</p>
+      <div>
+        <a href="{% url 'catalog:product_list' %}" class="btn btn-primary px-4 py-2">
+          <i class="bi bi-bag-plus me-2"></i>Start Shopping
+        </a>
+      </div>
+    </div>
+  {% endif %}
+</div>
+{% endblock %}
