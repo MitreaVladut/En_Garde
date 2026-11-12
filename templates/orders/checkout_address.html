@@ -1,0 +1,94 @@
+{% extends 'base.html' %}
+
+{% block title %}Checkout: Step 1 - Shipping Address — En Garde Gear{% endblock %}
+
+{% block content %}
+<div class="container py-3">
+  <div class="row justify-content-center">
+    <div class="col-12 col-lg-8">
+      <!-- Stepper Component -->
+      {% include 'orders/checkout_stepper.html' with step=1 %}
+
+      <div class="card border-0 shadow-sm p-4 bg-white rounded-3 mb-4">
+        <h2 class="h4 fw-bold mb-3">Select Shipping Address</h2>
+        <p class="text-muted small mb-4">Where should we deliver your fencing equipment?</p>
+
+        <form method="post" action="{% url 'orders:checkout_address' %}">
+          {% csrf_token %}
+
+          {% if addresses %}
+            <div class="row g-3 mb-4">
+              {% for addr in addresses %}
+                <div class="col-12 col-md-6">
+                  <div class="card h-100 p-3 border rounded-3 position-relative address-select-card {% if selected_address_id == addr.id %}border-primary bg-light{% endif %}">
+                    <div class="form-check">
+                      <input class="form-check-input" type="radio" name="address_id" id="addr_{{ addr.id }}" value="{{ addr.id }}" {% if selected_address_id == addr.id %}checked{% endif %}>
+                      <label class="form-check-label w-100" for="addr_{{ addr.id }}">
+                        <div class="d-flex justify-content-between align-items-center mb-1">
+                          <span class="fw-bold">{{ addr.full_name }}</span>
+                          {% if addr.is_default %}
+                            <span class="badge bg-primary" style="font-size: 0.7rem;">Default</span>
+                          {% endif %}
+                        </div>
+                        <div class="text-secondary small">
+                          <div>{{ addr.street }}</div>
+                          <div>{{ addr.city }}, {{ addr.postal_code }}</div>
+                          <div>{{ addr.country }}</div>
+                        </div>
+                      </label>
+                    </div>
+                  </div>
+                </div>
+              {% endfor %}
+            </div>
+          {% endif %}
+
+          <!-- Option to enter new address -->
+          <div class="border rounded-3 p-3 mb-4 bg-white">
+            <div class="form-check mb-2">
+              <input class="form-check-input" type="radio" name="address_id" id="addr_new" value="new" {% if not addresses %}checked{% endif %} data-bs-toggle="collapse" data-bs-target="#newAddressFields" aria-expanded="{% if not addresses %}true{% else %}false{% endif %}">
+              <label class="form-check-label fw-bold" for="addr_new">
+                Enter a new shipping address
+              </label>
+            </div>
+
+            <div class="collapse {% if not addresses %}show{% endif %} pt-3 border-top mt-2" id="newAddressFields">
+              <div class="mb-3">
+                <label class="form-label small fw-semibold">Recipient Full Name</label>
+                {{ form.full_name }}
+              </div>
+              <div class="mb-3">
+                <label class="form-label small fw-semibold">Street & House/Apt</label>
+                {{ form.street }}
+              </div>
+              <div class="row g-2 mb-3">
+                <div class="col-8">
+                  <label class="form-label small fw-semibold">City</label>
+                  {{ form.city }}
+                </div>
+                <div class="col-4">
+                  <label class="form-label small fw-semibold">Postal Code</label>
+                  {{ form.postal_code }}
+                </div>
+              </div>
+              <div class="mb-2">
+                <label class="form-label small fw-semibold">Country</label>
+                {{ form.country }}
+              </div>
+            </div>
+          </div>
+
+          <div class="d-flex justify-content-between align-items-center">
+            <a href="{% url 'cart:cart_detail' %}" class="btn btn-outline-secondary">
+              <i class="bi bi-arrow-left me-1"></i>Back to Cart
+            </a>
+            <button type="submit" class="btn btn-primary px-4 py-2 fw-semibold">
+              Continue to Delivery <i class="bi bi-arrow-right ms-1"></i>
+            </button>
+          </div>
+        </form>
+      </div>
+    </div>
+  </div>
+</div>
+{% endblock %}

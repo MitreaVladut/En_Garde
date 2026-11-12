@@ -1,0 +1,51 @@
+{% extends 'base.html' %}
+
+{% block title %}Checkout: Step 2 - Delivery Method — En Garde Gear{% endblock %}
+
+{% block content %}
+<div class="container py-3">
+  <div class="row justify-content-center">
+    <div class="col-12 col-lg-8">
+      <!-- Stepper Component -->
+      {% include 'orders/checkout_stepper.html' with step=2 %}
+
+      <div class="card border-0 shadow-sm p-4 bg-white rounded-3 mb-4">
+        <h2 class="h4 fw-bold mb-3">Select Delivery Method</h2>
+        <p class="text-muted small mb-4">Choose your preferred shipping timeframe and service.</p>
+
+        <form method="post" action="{% url 'orders:checkout_delivery' %}">
+          {% csrf_token %}
+
+          <div class="d-flex flex-column gap-3 mb-4">
+            {% for method in delivery_methods %}
+              <div class="card p-3 border rounded-3 position-relative {% if selected_delivery_id == method.id %}border-primary bg-light{% endif %}">
+                <div class="form-check d-flex align-items-center justify-content-between">
+                  <div>
+                    <input class="form-check-input me-3" type="radio" name="delivery_method_id" id="method_{{ method.id }}" value="{{ method.id }}" {% if selected_delivery_id == method.id %}checked{% endif %}>
+                    <label class="form-check-label" for="method_{{ method.id }}">
+                      <span class="fw-bold d-block">{{ method.name }}</span>
+                      <span class="text-muted small"><i class="bi bi-clock me-1"></i>Estimated: {{ method.estimated_days }}</span>
+                    </label>
+                  </div>
+                  <div class="text-end">
+                    <span class="fs-5 fw-bold text-primary">€{{ method.cost }}</span>
+                  </div>
+                </div>
+              </div>
+            {% endfor %}
+          </div>
+
+          <div class="d-flex justify-content-between align-items-center">
+            <a href="{% url 'orders:checkout_address' %}" class="btn btn-outline-secondary">
+              <i class="bi bi-arrow-left me-1"></i>Back to Address
+            </a>
+            <button type="submit" class="btn btn-primary px-4 py-2 fw-semibold">
+              Continue to Summary <i class="bi bi-arrow-right ms-1"></i>
+            </button>
+          </div>
+        </form>
+      </div>
+    </div>
+  </div>
+</div>
+{% endblock %}
