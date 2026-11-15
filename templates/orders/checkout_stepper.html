@@ -1,0 +1,18 @@
+<div class="checkout-stepper py-3 mb-4 border-bottom">
+  <div class="checkout-step {% if step == 1 %}active{% elif step > 1 %}completed{% endif %}">
+    <div class="checkout-step-number">{% if step > 1 %}<i class="bi bi-check"></i>{% else %}1{% endif %}</div>
+    <div class="checkout-step-text">1. Address</div>
+  </div>
+  <div class="checkout-step {% if step == 2 %}active{% elif step > 2 %}completed{% endif %}">
+    <div class="checkout-step-number">{% if step > 2 %}<i class="bi bi-check"></i>{% else %}2{% endif %}</div>
+    <div class="checkout-step-text">2. Delivery</div>
+  </div>
+  <div class="checkout-step {% if step == 3 %}active{% elif step > 3 %}completed{% endif %}">
+    <div class="checkout-step-number">{% if step > 3 %}<i class="bi bi-check"></i>{% else %}3{% endif %}</div>
+    <div class="checkout-step-text">3. Summary</div>
+  </div>
+  <div class="checkout-step {% if step == 4 %}active{% endif %}">
+    <div class="checkout-step-number">4</div>
+    <div class="checkout-step-text">4. Payment</div>
+  </div>
+</div>

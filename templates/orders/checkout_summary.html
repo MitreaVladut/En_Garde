@@ -1,0 +1,133 @@
+{% extends 'base.html' %}
+
+{% block title %}Checkout: Step 3 - Order Summary — En Garde Gear{% endblock %}
+
+{% block content %}
+<div class="container py-3">
+  <div class="row justify-content-center">
+    <div class="col-12 col-lg-9">
+      <!-- Stepper Component -->
+      {% include 'orders/checkout_stepper.html' with step=3 %}
+
+      <div class="card border-0 shadow-sm p-4 bg-white rounded-3 mb-4">
+        <h2 class="h4 fw-bold mb-4 border-bottom pb-2">Order Review & Final Confirmation</h2>
+
+        <div class="row g-4 mb-4">
+          <!-- Shipping Snapshot Preview -->
+          <div class="col-12 col-md-6">
+            <div class="p-3 bg-light rounded-3 h-100 border">
+              <div class="d-flex justify-content-between align-items-center mb-2">
+                <span class="text-uppercase fw-bold small text-muted"><i class="bi bi-geo-alt me-1"></i>Shipping To</span>
+                <a href="{% url 'orders:checkout_address' %}" class="small text-primary text-decoration-none">Change</a>
+              </div>
+              <div class="fw-bold">{{ address.full_name }}</div>
+              <div class="text-secondary small">
+                <div>{{ address.street }}</div>
+                <div>{{ address.city }}, {{ address.postal_code }}</div>
+                <div>{{ address.country }}</div>
+              </div>
+            </div>
+          </div>
+
+          <!-- Delivery Method Preview -->
+          <div class="col-12 col-md-6">
+            <div class="p-3 bg-light rounded-3 h-100 border">
+              <div class="d-flex justify-content-between align-items-center mb-2">
+                <span class="text-uppercase fw-bold small text-muted"><i class="bi bi-truck me-1"></i>Delivery Option</span>
+                <a href="{% url 'orders:checkout_delivery' %}" class="small text-primary text-decoration-none">Change</a>
+              </div>
+              <div class="fw-bold">{{ delivery_method.name }}</div>
+              <div class="text-secondary small">
+                <div>Estimated transit: {{ delivery_method.estimated_days }}</div>
+                <div>Shipping cost: €{{ delivery_method.cost }}</div>
+              </div>
+            </div>
+          </div>
+        </div>
+
+        <!-- Items Table -->
+        <h5 class="fw-bold h6 text-uppercase text-muted mb-3">Order Items</h5>
+        <div class="table-responsive border rounded-3 mb-4">
+          <table class="table align-middle mb-0">
+            <thead class="table-light small">
+              <tr>
+                <th>Product</th>
+                <th class="text-center">Quantity</th>
+                <th class="text-end">Unit Price</th>
+                <th class="text-end">Total</th>
+              </tr>
+            </thead>
+            <tbody>
+              {% for item in cart_items %}
+                <tr>
+                  <td>
+                    <div class="fw-semibold small">{{ item.variant.product.name }}</div>
+                    <div class="text-muted small" style="font-size: 0.75rem;">
+                      {{ item.variant.label }} (SKU: {{ item.variant.sku }})
+                    </div>
+                  </td>
+                  <td class="text-center small">{{ item.quantity }}</td>
+                  <td class="text-end small">€{{ item.variant.price }}</td>
+                  <td class="text-end fw-semibold small">€{{ item.line_total }}</td>
+                </tr>
+              {% endfor %}
+            </tbody>
+          </table>
+        </div>
+
+        <!-- Financial Breakdown -->
+        <div class="row justify-content-end mb-4">
+          <div class="col-12 col-md-5">
+            <div class="d-flex justify-content-between mb-2 small">
+              <span class="text-muted">Items Subtotal:</span>
+              <span>€{{ subtotal }}</span>
+            </div>
+
+            {% if discount_amount > 0 %}
+              <div class="d-flex justify-content-between mb-2 small text-success">
+                <span>Discount ({{ discount_code.code }}):</span>
+                <span>- €{{ discount_amount }}</span>
+              </div>
+            {% endif %}
+
+            <div class="d-flex justify-content-between mb-2 small">
+              <span class="text-muted">Shipping Cost:</span>
+              <span>€{{ shipping_cost }}</span>
+            </div>
+
+            <hr class="my-2">
+
+            <div class="d-flex justify-content-between align-items-baseline">
+              <span class="fw-bold">Total Amount:</span>
+              <span class="fs-4 fw-bold text-primary">€{{ total }}</span>
+            </div>
+          </div>
+        </div>
+
+        <!-- Stock Reservation Notice (Requirement A7) -->
+        <div class="alert alert-info small d-flex align-items-center gap-2 mb-4">
+          <i class="bi bi-shield-lock-fill text-primary fs-5"></i>
+          <div>
+            Clicking <strong>Pay with Stripe</strong> will reserve your items for 30 minutes in our database using transaction locks, preventing other fencers from taking the last unit.
+          </div>
+        </div>
+
+        <!-- Proceed to Payment Action -->
+        <div class="d-flex justify-content-between align-items-center">
+          <a href="{% url 'orders:checkout_delivery' %}" class="btn btn-outline-secondary">
+            <i class="bi bi-arrow-left me-1"></i>Back to Delivery
+          </a>
+
+          <form method="post" action="{% url 'orders:checkout_pay' %}">
+            {% csrf_token %}
+            <button type="submit" class="btn btn-primary btn-lg px-4 py-2 fw-bold shadow-sm d-flex align-items-center gap-2">
+              <i class="bi bi-credit-card-2-front-fill"></i>
+              <span>Pay with Stripe (€{{ total }})</span>
+            </button>
+          </form>
+        </div>
+      </div>
+    </div>
+  </div>
+</div>
+{% endblock %}
