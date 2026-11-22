@@ -1,0 +1,80 @@
+{% extends 'base.html' %}
+
+{% block title %}Order Confirmation #{{ order.number }} — En Garde Gear{% endblock %}
+
+{% block content %}
+<div class="container py-4">
+  <div class="row justify-content-center">
+    <div class="col-12 col-md-9 col-lg-7">
+      <div class="card border-0 shadow-sm p-4 p-md-5 bg-white rounded-3 text-center mb-4">
+        <div class="mb-3">
+          {% if order.status == 'Paid' %}
+            <i class="bi bi-check-circle-fill text-success" style="font-size: 3.5rem;"></i>
+          {% else %}
+            <i class="bi bi-clock-history text-primary" style="font-size: 3.5rem;"></i>
+          {% endif %}
+        </div>
+
+        <h1 class="h3 fw-bold mb-2">Thank you for your order!</h1>
+        <p class="text-muted mb-4">Your fencing gear order has been registered in our system.</p>
+
+        <!-- Order Number & Status Box -->
+        <div class="p-3 bg-light rounded-3 border mb-4 text-start">
+          <div class="row g-2 align-items-center">
+            <div class="col-6">
+              <span class="text-muted small d-block">Order Reference:</span>
+              <strong class="fs-5 text-dark">#{{ order.number }}</strong>
+            </div>
+            <div class="col-6 text-end">
+              <span class="text-muted small d-block">Current Status:</span>
+              {% if order.status == 'Paid' %}
+                <span class="badge bg-success fs-6"><i class="bi bi-check2 me-1"></i>Paid</span>
+              {% elif order.status == 'New' %}
+                <span class="badge bg-warning text-dark fs-6"><i class="bi bi-hourglass-split me-1"></i>New (Pending Webhook)</span>
+              {% elif order.status == 'Shipped' %}
+                <span class="badge bg-info text-dark fs-6"><i class="bi bi-truck me-1"></i>Shipped</span>
+              {% else %}
+                <span class="badge bg-secondary fs-6">{{ order.status }}</span>
+              {% endif %}
+            </div>
+          </div>
+        </div>
+
+        <!-- Order Details Summary -->
+        <div class="text-start mb-4">
+          <h5 class="h6 fw-bold text-uppercase text-muted border-bottom pb-2 mb-3">Order Details</h5>
+          <div class="row g-3 small">
+            <div class="col-6">
+              <span class="text-muted d-block">Delivery Address:</span>
+              <div>{{ order.shipping_full_name }}</div>
+              <div class="text-secondary">{{ order.shipping_street }}, {{ order.shipping_city }}</div>
+            </div>
+            <div class="col-6 text-end">
+              <span class="text-muted d-block">Delivery Method:</span>
+              <div>{{ order.delivery_method.name }}</div>
+              <div class="text-primary fw-bold">Total: €{{ order.total }}</div>
+            </div>
+          </div>
+        </div>
+
+        <!-- 30-min Reservation Info Note -->
+        {% if order.status == 'New' %}
+          <div class="alert alert-secondary small text-start mb-4">
+            <i class="bi bi-info-circle me-1"></i>
+            Stock is reserved for 30 minutes. Once payment is confirmed by the Stripe webhook, status updates automatically to <strong>Paid</strong>.
+          </div>
+        {% endif %}
+
+        <div class="d-flex flex-wrap justify-content-center gap-2">
+          <a href="{% url 'orders:order_detail' number=order.number %}" class="btn btn-outline-primary px-4">
+            <i class="bi bi-receipt me-1"></i>View Order Details
+          </a>
+          <a href="{% url 'catalog:product_list' %}" class="btn btn-primary px-4">
+            <i class="bi bi-arrow-left me-1"></i>Continue Shopping
+          </a>
+        </div>
+      </div>
+    </div>
+  </div>
+</div>
+{% endblock %}
