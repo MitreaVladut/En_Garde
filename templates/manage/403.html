@@ -1,0 +1,29 @@
+{% extends 'base.html' %}
+
+{% block title %}403 Forbidden — En Garde Gear{% endblock %}
+
+{% block content %}
+<div class="container py-5 text-center">
+  <div class="row justify-content-center">
+    <div class="col-12 col-md-8 col-lg-6">
+      <div class="card border-0 shadow-sm p-5 bg-white rounded-4">
+        <div class="text-danger mb-3">
+          <i class="bi bi-shield-x" style="font-size: 4rem;"></i>
+        </div>
+        <h1 class="h3 fw-bold text-dark mb-2">403 — Access Denied</h1>
+        <p class="text-muted mb-4">
+          This administration section (<code>/manage/</code>) is strictly restricted to authorized staff members only. Your current user account does not possess staff privileges.
+        </p>
+        <div class="d-flex justify-content-center gap-2">
+          <a href="{% url 'catalog:product_list' %}" class="btn btn-primary px-4">
+            <i class="bi bi-house me-1"></i>Return to Store
+          </a>
+          <a href="{% url 'accounts:login' %}?next=/manage/" class="btn btn-outline-secondary px-4">
+            Log in as Staff
+          </a>
+        </div>
+      </div>
+    </div>
+  </div>
+</div>
+{% endblock %}
