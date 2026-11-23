@@ -58,3 +58,20 @@ The application is structured into six business-logic apps inside `apps/`:
 ## 5. Demo Accounts
 - **Customer Account**: `fencer@engarde.com` / `fencer1234`
 - **Staff Administrator Account**: `admin@engarde.com` / `admin1234`
+
+---
+
+## 6. Project Status (Week 10)
+- [x] **A1 Product Catalog**: 24 items per page with Paginator, category slugs, variant pricing, availability.
+- [x] **A2 Basic Search**: Case-insensitive search on product name with "No products found" feedback.
+- [x] **A3 Shopping Cart**: Database cart items, guest-to-user session merge, server stock checks.
+- [x] **A4 User Accounts**: Custom User model with Argon2 hashing and saved addresses.
+- [x] **A5 Checkout**: 4-step wizard (Address -> Delivery -> Summary -> Stripe Checkout).
+- [x] **A6 Sandbox Payment**: Stripe Checkout session with signature-verified webhook.
+- [x] **A7 Stock Management**: 30-minute stock reservations with `SELECT ... FOR UPDATE` row locking.
+- [x] **A8 Order History**: Customer order list and detailed views filtered by `request.user`.
+- [x] **A9 Administration Panel**: Staff portal under `/manage/` with product/category/variant CRUD and order management.
+- [x] **A10 Basic Security**: Server-side validation, CSRF middleware, ORM queries, 403 on staff routes.
+- [ ] **A11 Responsive Design**: In progress for Week 11.
+- [ ] **A12 Automated Tests**: Scheduled for Week 11 (pytest suite).
+- [ ] **Bonus Features (B1-B7)**: Scheduled for Weeks 11–12.
