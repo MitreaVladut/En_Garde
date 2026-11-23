@@ -1,0 +1,128 @@
+{% extends 'manage/base_manage.html' %}
+
+{% block title %}Manage Orders — Staff Administration{% endblock %}
+
+{% block content %}
+<div class="d-flex justify-content-between align-items-center mb-4">
+  <div>
+    <h1 class="h3 fw-bold mb-0">Orders Management</h1>
+    <span class="text-muted small">Filter by status and process shipments through allowed lifecycle transitions.</span>
+  </div>
+</div>
+
+<!-- Order Status Filter Bar (Wireframe Page 6) -->
+<div class="card border-0 shadow-sm p-3 bg-white rounded-3 mb-4">
+  <form method="get" action="" class="row g-2 align-items-center">
+    <div class="col-auto">
+      <label class="form-label mb-0 fw-bold small text-muted text-uppercase">Orders Status:</label>
+    </div>
+    <div class="col-auto">
+      <select name="status" class="form-select form-select-sm" style="min-width: 160px;" onchange="this.form.submit()">
+        {% for choice in status_choices %}
+          <option value="{{ choice }}" {% if current_status == choice %}selected{% endif %}>{{ choice }}</option>
+        {% endfor %}
+      </select>
+    </div>
+    <div class="col-auto">
+      <button type="submit" class="btn btn-sm btn-primary">Filter</button>
+      {% if current_status != 'All' %}
+        <a href="{% url 'manage:order_list' %}" class="btn btn-sm btn-outline-secondary ms-1">Clear</a>
+      {% endif %}
+    </div>
+  </form>
+</div>
+
+<!-- Orders Table (Wireframe Page 6) -->
+<div class="card border-0 shadow-sm bg-white rounded-3 overflow-hidden">
+  <div class="table-responsive">
+    <table class="table align-middle mb-0">
+      <thead class="table-light small text-uppercase">
+        <tr>
+          <th>Number</th>
+          <th>Date</th>
+          <th>Customer</th>
+          <th>Total</th>
+          <th>Status</th>
+          <th class="text-end">Action</th>
+        </tr>
+      </thead>
+      <tbody>
+        {% for order in orders %}
+          <tr>
+            <td>
+              <a href="{% url 'manage:order_detail' number=order.number %}" class="fw-bold text-decoration-none">
+                #{{ order.number }}
+              </a>
+            </td>
+            <td class="small text-secondary">{{ order.created_at|date:"d M Y, H:i" }}</td>
+            <td class="small">
+              <span class="fw-semibold">{{ order.shipping_full_name }}</span>
+              <div class="text-muted" style="font-size: 0.75rem;">{{ order.user.email }}</div>
+            </td>
+            <td class="fw-bold">€{{ order.total }}</td>
+            <td>
+              {% if order.status == 'Paid' %}
+                <span class="badge bg-success">Paid</span>
+              {% elif order.status == 'New' %}
+                <span class="badge bg-warning text-dark">New</span>
+              {% elif order.status == 'Shipped' %}
+                <span class="badge bg-info text-dark">Shipped</span>
+              {% elif order.status == 'Delivered' %}
+                <span class="badge bg-primary">Delivered</span>
+              {% elif order.status == 'Cancelled' %}
+                <span class="badge bg-danger">Cancelled</span>
+              {% endif %}
+            </td>
+            <td class="text-end">
+              <div class="d-inline-flex gap-1">
+                <!-- Allowed Transitions per Specification (New -> Paid via webhook; Paid -> Shipped -> Delivered; New/Paid -> Cancelled) -->
+                {% if order.status == 'Paid' %}
+                  <!-- Ship Button -->
+                  <form method="post" action="{% url 'manage:order_status_update' number=order.number %}" class="d-inline">
+                    {% csrf_token %}
+                    <input type="hidden" name="status" value="Shipped">
+                    <button type="submit" class="btn btn-sm btn-info text-dark fw-semibold py-0 px-2">Ship</button>
+                  </form>
+                  <!-- Cancel Button -->
+                  <form method="post" action="{% url 'manage:order_status_update' number=order.number %}" class="d-inline" onsubmit="return confirm('Cancel order and restore stock?');">
+                    {% csrf_token %}
+                    <input type="hidden" name="status" value="Cancelled">
+                    <button type="submit" class="btn btn-sm btn-outline-danger py-0 px-2">Cancel</button>
+                  </form>
+
+                {% elif order.status == 'New' %}
+                  <!-- Cancel Button -->
+                  <form method="post" action="{% url 'manage:order_status_update' number=order.number %}" class="d-inline" onsubmit="return confirm('Cancel unpaid order and release reservation?');">
+                    {% csrf_token %}
+                    <input type="hidden" name="status" value="Cancelled">
+                    <button type="submit" class="btn btn-sm btn-outline-danger py-0 px-2">Cancel</button>
+                  </form>
+
+                {% elif order.status == 'Shipped' %}
+                  <!-- Deliver Button -->
+                  <form method="post" action="{% url 'manage:order_status_update' number=order.number %}" class="d-inline">
+                    {% csrf_token %}
+                    <input type="hidden" name="status" value="Delivered">
+                    <button type="submit" class="btn btn-sm btn-success py-0 px-2">Deliver</button>
+                  </form>
+
+                {% else %}
+                  <span class="text-muted small">—</span>
+                {% endif %}
+
+                <a href="{% url 'manage:order_detail' number=order.number %}" class="btn btn-sm btn-outline-secondary py-0 px-2 ms-1">
+                  Details
+                </a>
+              </div>
+            </td>
+          </tr>
+        {% empty %}
+          <tr>
+            <td colspan="6" class="text-center text-muted py-4">No orders matching status filter "{{ current_status }}".</td>
+          </tr>
+        {% endfor %}
+      </tbody>
+    </table>
+  </div>
+</div>
+{% endblock %}
