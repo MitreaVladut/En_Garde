@@ -1,0 +1,94 @@
+{% extends 'base.html' %}
+
+{% block title %}My Orders — En Garde Gear{% endblock %}
+
+{% block content %}
+<div class="container">
+  <!-- Breadcrumb -->
+  <nav aria-label="breadcrumb" class="mb-3">
+    <ol class="breadcrumb small">
+      <li class="breadcrumb-item"><a href="{% url 'catalog:product_list' %}" class="text-decoration-none">Home</a></li>
+      <li class="breadcrumb-item active" aria-current="page">My Orders</li>
+    </ol>
+  </nav>
+
+  <div class="d-flex justify-content-between align-items-center mb-4 border-bottom pb-3">
+    <div>
+      <h1 class="h3 fw-bold mb-1"><i class="bi bi-box-seam-fill text-primary me-2"></i>My Orders</h1>
+      <p class="text-muted small mb-0">Track shipments and view past fencing equipment purchases.</p>
+    </div>
+  </div>
+
+  {% if orders %}
+    <div class="card border-0 shadow-sm bg-white rounded-3 overflow-hidden mb-5">
+      <div class="table-responsive">
+        <table class="table align-middle mb-0">
+          <thead class="table-light small text-uppercase">
+            <tr>
+              <th scope="col">Order Number</th>
+              <th scope="col">Date</th>
+              <th scope="col">Items</th>
+              <th scope="col">Status</th>
+              <th scope="col" class="text-end">Total</th>
+              <th scope="col" class="text-end">Action</th>
+            </tr>
+          </thead>
+          <tbody>
+            {% for order in orders %}
+              <tr>
+                <td>
+                  <strong class="text-primary">#{{ order.number }}</strong>
+                </td>
+                <td class="small text-secondary">
+                  {{ order.created_at|date:"d M Y, H:i" }}
+                </td>
+                <td class="small">
+                  {% for item in order.items.all %}
+                    <div class="text-truncate" style="max-width: 250px;">
+                      {{ item.quantity }}x {{ item.product_name }} <span class="text-muted">({{ item.variant_label }})</span>
+                    </div>
+                  {% endfor %}
+                </td>
+                <td>
+                  {% if order.status == 'Paid' %}
+                    <span class="badge bg-success">Paid</span>
+                  {% elif order.status == 'New' %}
+                    <span class="badge bg-warning text-dark">New</span>
+                  {% elif order.status == 'Shipped' %}
+                    <span class="badge bg-info text-dark">Shipped</span>
+                  {% elif order.status == 'Delivered' %}
+                    <span class="badge bg-primary">Delivered</span>
+                  {% elif order.status == 'Cancelled' %}
+                    <span class="badge bg-danger">Cancelled</span>
+                  {% endif %}
+                </td>
+                <td class="text-end fw-bold">
+                  €{{ order.total }}
+                </td>
+                <td class="text-end">
+                  <a href="{% url 'orders:order_detail' number=order.number %}" class="btn btn-sm btn-outline-primary">
+                    Details
+                  </a>
+                </td>
+              </tr>
+            {% endfor %}
+          </tbody>
+        </table>
+      </div>
+    </div>
+  {% else %}
+    <div class="card text-center p-5 border-0 bg-white shadow-sm my-4">
+      <div class="mb-3">
+        <i class="bi bi-box text-muted" style="font-size: 3rem;"></i>
+      </div>
+      <h3 class="h4 fw-bold text-dark mb-2">No orders placed yet</h3>
+      <p class="text-muted mb-4">When you purchase fencing gear, your order history and live shipping updates will appear here.</p>
+      <div>
+        <a href="{% url 'catalog:product_list' %}" class="btn btn-primary px-4 py-2">
+          <i class="bi bi-bag-plus me-1"></i>Start Shopping
+        </a>
+      </div>
+    </div>
+  {% endif %}
+</div>
+{% endblock %}
