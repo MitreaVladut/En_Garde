@@ -1,0 +1,156 @@
+{% extends 'manage/base_manage.html' %}
+
+{% block title %}Dashboard — Staff Administration{% endblock %}
+
+{% block content %}
+<div class="d-flex justify-content-between align-items-center mb-4">
+  <div>
+    <h1 class="h3 fw-bold mb-0">Staff Dashboard</h1>
+    <span class="text-muted small">Store performance, inventory health, and recent order transactions.</span>
+  </div>
+  <div class="d-flex gap-2">
+    <a href="{% url 'manage:product_create' %}" class="btn btn-primary btn-sm">
+      <i class="bi bi-plus-lg me-1"></i>New Product
+    </a>
+    <a href="{% url 'manage:category_create' %}" class="btn btn-outline-secondary btn-sm">
+      <i class="bi bi-folder-plus me-1"></i>New Category
+    </a>
+  </div>
+</div>
+
+<!-- Quick Metric Cards -->
+<div class="row g-3 mb-4">
+  <div class="col-12 col-sm-6 col-xl-3">
+    <div class="card border-0 shadow-sm p-3 bg-white rounded-3 h-100 border-start border-primary border-4">
+      <div class="text-muted small text-uppercase fw-bold">Total Orders</div>
+      <div class="fs-3 fw-bold text-dark mt-1">{{ total_orders }}</div>
+      <span class="small text-muted"><a href="{% url 'manage:order_list' %}">View all orders &rarr;</a></span>
+    </div>
+  </div>
+
+  <div class="col-12 col-sm-6 col-xl-3">
+    <div class="card border-0 shadow-sm p-3 bg-white rounded-3 h-100 border-start border-success border-4">
+      <div class="text-muted small text-uppercase fw-bold">Paid Revenue</div>
+      <div class="fs-3 fw-bold text-success mt-1">€{{ total_revenue }}</div>
+      <span class="small text-muted">Confirmed Stripe transactions</span>
+    </div>
+  </div>
+
+  <div class="col-12 col-sm-6 col-xl-3">
+    <div class="card border-0 shadow-sm p-3 bg-white rounded-3 h-100 border-start border-warning border-4">
+      <div class="text-muted small text-uppercase fw-bold">Pending Orders</div>
+      <div class="fs-3 fw-bold text-warning mt-1">{{ pending_orders }}</div>
+      <span class="small text-muted"><a href="{% url 'manage:order_list' %}?status=New">Filter pending &rarr;</a></span>
+    </div>
+  </div>
+
+  <div class="col-12 col-sm-6 col-xl-3">
+    <div class="card border-0 shadow-sm p-3 bg-white rounded-3 h-100 border-start border-info border-4">
+      <div class="text-muted small text-uppercase fw-bold">Active Products</div>
+      <div class="fs-3 fw-bold text-dark mt-1">{{ products_count }}</div>
+      <span class="small text-muted"><a href="{% url 'manage:product_list' %}">Manage products &rarr;</a></span>
+    </div>
+  </div>
+</div>
+
+<div class="row g-4">
+  <!-- Low Stock Alert Panel -->
+  <div class="col-12 col-lg-5">
+    <div class="card border-0 shadow-sm bg-white rounded-3 p-3 h-100">
+      <div class="d-flex justify-content-between align-items-center mb-3">
+        <h5 class="h6 fw-bold mb-0 text-danger"><i class="bi bi-exclamation-triangle-fill me-1"></i>Low Stock Watchlist (&le; 3)</h5>
+        <span class="badge bg-danger">{{ low_stock_variants.count }} items</span>
+      </div>
+
+      <div class="table-responsive">
+        <table class="table table-sm align-middle small mb-0">
+          <thead class="table-light">
+            <tr>
+              <th>Product / Variant</th>
+              <th class="text-center">Stock</th>
+              <th class="text-end">Action</th>
+            </tr>
+          </thead>
+          <tbody>
+            {% for v in low_stock_variants %}
+              <tr>
+                <td>
+                  <div class="fw-bold text-truncate" style="max-width: 180px;">{{ v.product.name }}</div>
+                  <div class="text-muted" style="font-size: 0.72rem;">{{ v.label }} (SKU: {{ v.sku }})</div>
+                </td>
+                <td class="text-center">
+                  {% if v.stock == 0 %}
+                    <span class="badge bg-danger">0 Out</span>
+                  {% elif v.stock == 1 %}
+                    <span class="badge bg-warning text-dark">1 Left</span>
+                  {% else %}
+                    <span class="badge bg-secondary">{{ v.stock }}</span>
+                  {% endif %}
+                </td>
+                <td class="text-end">
+                  <a href="{% url 'manage:variant_update' id=v.product.id vid=v.id %}" class="btn btn-outline-primary btn-sm py-0 px-2" style="font-size: 0.75rem;">
+                    Update Stock
+                  </a>
+                </td>
+              </tr>
+            {% empty %}
+              <tr>
+                <td colspan="3" class="text-center text-muted py-3">All variants currently well-stocked.</td>
+              </tr>
+            {% endfor %}
+          </tbody>
+        </table>
+      </div>
+    </div>
+  </div>
+
+  <!-- Recent Orders Table -->
+  <div class="col-12 col-lg-7">
+    <div class="card border-0 shadow-sm bg-white rounded-3 p-3 h-100">
+      <div class="d-flex justify-content-between align-items-center mb-3">
+        <h5 class="h6 fw-bold mb-0">Recent Orders</h5>
+        <a href="{% url 'manage:order_list' %}" class="small text-primary text-decoration-none">View All &rarr;</a>
+      </div>
+
+      <div class="table-responsive">
+        <table class="table table-sm align-middle small mb-0">
+          <thead class="table-light">
+            <tr>
+              <th>Order</th>
+              <th>Customer</th>
+              <th>Date</th>
+              <th>Status</th>
+              <th class="text-end">Total</th>
+            </tr>
+          </thead>
+          <tbody>
+            {% for o in recent_orders %}
+              <tr>
+                <td><a href="{% url 'manage:order_detail' number=o.number %}" class="fw-bold text-decoration-none">#{{ o.number }}</a></td>
+                <td>{{ o.shipping_full_name }}</td>
+                <td class="text-muted">{{ o.created_at|date:"d M, H:i" }}</td>
+                <td>
+                  {% if o.status == 'Paid' %}
+                    <span class="badge bg-success">Paid</span>
+                  {% elif o.status == 'New' %}
+                    <span class="badge bg-warning text-dark">New</span>
+                  {% elif o.status == 'Shipped' %}
+                    <span class="badge bg-info text-dark">Shipped</span>
+                  {% elif o.status == 'Delivered' %}
+                    <span class="badge bg-primary">Delivered</span>
+                  {% elif o.status == 'Cancelled' %}
+                    <span class="badge bg-danger">Cancelled</span>
+                  {% endif %}
+                </td>
+                <td class="text-end fw-bold">€{{ o.total }}</td>
+              </tr>
+            {% empty %}
+              <tr><td colspan="5" class="text-center text-muted py-3">No orders placed yet.</td></tr>
+            {% endfor %}
+          </tbody>
+        </table>
+      </div>
+    </div>
+  </div>
+</div>
+{% endblock %}
